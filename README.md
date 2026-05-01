@@ -83,6 +83,15 @@ source SiFli-SDK/export.sh
 arm-none-eabi-size app/project/build_sf32lb52-lchspi-ulp_hcpu/main.elf
 ```
 
+## Flash
+
+Use the download script in build_*
+
+```bash
+cd build_sf32lb52-lchspi-ulp_hcpu
+./uart_download.sh
+```
+
 ## Test
 
 Run host tests from the repository root:
