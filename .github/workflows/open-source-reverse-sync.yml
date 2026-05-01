@@ -37,19 +37,30 @@ jobs:
           fetch-depth: 0
           submodules: false
 
-      - name: Create origin app token
-        id: app-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ secrets.ORIGIN_SYNC_APP_ID }}
-          private-key: ${{ secrets.ORIGIN_SYNC_APP_PRIVATE_KEY }}
-          owner: HalfSweet
-          repositories: claude-desktop-buddy-sifli
+      - name: Configure origin deploy key
+        shell: bash
+        env:
+          ORIGIN_SYNC_DEPLOY_KEY: ${{ secrets.ORIGIN_SYNC_DEPLOY_KEY }}
+        run: |
+          : "${ORIGIN_SYNC_DEPLOY_KEY:?set ORIGIN_SYNC_DEPLOY_KEY to the origin repository write deploy key}"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$ORIGIN_SYNC_DEPLOY_KEY" > ~/.ssh/origin_sync_deploy_key
+          chmod 600 ~/.ssh/origin_sync_deploy_key
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+          {
+            echo "Host github.com"
+            echo "  HostName github.com"
+            echo "  User git"
+            echo "  IdentityFile ~/.ssh/origin_sync_deploy_key"
+            echo "  IdentitiesOnly yes"
+          } > ~/.ssh/config
+          chmod 600 ~/.ssh/config
 
       - name: Replay public commits into origin
         shell: bash
         env:
-          ORIGIN_REPO_URL: https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/HalfSweet/claude-desktop-buddy-sifli.git
+          ORIGIN_REPO_URL: git@github.com:HalfSweet/claude-desktop-buddy-sifli.git
           PUBLIC_HEAD: ${{ github.event.inputs.public_head || github.sha }}
         run: |
           chmod +x .github/scripts/open-source-reverse-sync.sh
