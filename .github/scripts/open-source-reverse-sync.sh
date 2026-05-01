@@ -2,14 +2,13 @@
 set -Eeuo pipefail
 
 PUBLIC_REPOSITORY="${PUBLIC_REPOSITORY:-HalfSweet/claude-buddy}"
-PUBLIC_BASE_COMMIT="${PUBLIC_BASE_COMMIT:-72ddd2f7e558d3f75e7686b65924f8b66d332ac3}"
 PUBLIC_HEAD="${PUBLIC_HEAD:-HEAD}"
 
 ORIGIN_REPOSITORY="${ORIGIN_REPOSITORY:-HalfSweet/claude-desktop-buddy-sifli}"
 ORIGIN_BRANCH="${ORIGIN_BRANCH:-main}"
 ORIGIN_REPO_URL="${ORIGIN_REPO_URL:-https://github.com/${ORIGIN_REPOSITORY}.git}"
 
-SYNC_STATE_REF="${SYNC_STATE_REF:-refs/sync/open-source-main}"
+SYNC_STATE_REF="${SYNC_STATE_REF:-refs/heads/sync/open-source-main}"
 SYNC_COMMITTER_NAME="${SYNC_COMMITTER_NAME:-open-source-reverse-sync[bot]}"
 SYNC_COMMITTER_EMAIL="${SYNC_COMMITTER_EMAIL:-open-source-reverse-sync[bot]@users.noreply.github.com}"
 
@@ -34,7 +33,10 @@ FILTERED_PATHSPECS=(
 
 public_head="$(git rev-parse --verify "${PUBLIC_HEAD}^{commit}")"
 sync_base="$(git ls-remote "$ORIGIN_REPO_URL" "$SYNC_STATE_REF" | awk '{print $1}')"
-sync_base="${sync_base:-$PUBLIC_BASE_COMMIT}"
+if [[ -z "$sync_base" ]]; then
+  echo "Missing ${SYNC_STATE_REF} in ${ORIGIN_REPOSITORY}; push open-source/main there once before running reverse sync." >&2
+  exit 1
+fi
 
 if [[ "$sync_base" == "$public_head" ]]; then
   echo "Open source sync state is already at ${public_head}."
