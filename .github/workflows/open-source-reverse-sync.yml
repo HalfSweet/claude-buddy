@@ -1,0 +1,70 @@
+name: Open Source Reverse Sync
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      public_head:
+        description: Public commit to sync. Defaults to the workflow commit.
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: open-source-reverse-sync-main
+  cancel-in-progress: false
+
+env:
+  PUBLIC_REPOSITORY: HalfSweet/claude-buddy
+  PUBLIC_BRANCH: main
+  PUBLIC_BASE_COMMIT: 72ddd2f7e558d3f75e7686b65924f8b66d332ac3
+  ORIGIN_REPOSITORY: HalfSweet/claude-desktop-buddy-sifli
+  ORIGIN_BRANCH: main
+  SYNC_STATE_REF: refs/sync/open-source-main
+
+jobs:
+  sync:
+    if: github.repository == 'HalfSweet/claude-buddy'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout public repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: false
+
+      - name: Create origin app token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.ORIGIN_SYNC_APP_ID }}
+          private-key: ${{ secrets.ORIGIN_SYNC_APP_PRIVATE_KEY }}
+          owner: HalfSweet
+          repositories: claude-desktop-buddy-sifli
+
+      - name: Replay public commits into origin
+        shell: bash
+        env:
+          ORIGIN_REPO_URL: https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/HalfSweet/claude-desktop-buddy-sifli.git
+          PUBLIC_HEAD: ${{ github.event.inputs.public_head || github.sha }}
+        run: |
+          chmod +x .github/scripts/open-source-reverse-sync.sh
+          .github/scripts/open-source-reverse-sync.sh sync
+
+      - name: Summarize
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "### Open source reverse sync"
+            echo "- Source: \`${PUBLIC_REPOSITORY}@${PUBLIC_BRANCH}\`"
+            echo "- Target: \`${ORIGIN_REPOSITORY}@${ORIGIN_BRANCH}\`"
+            echo "- Strategy: filter private/sync paths, replay public commits on origin main, then advance \`${SYNC_STATE_REF}\`."
+            echo "- Initial public baseline: \`${PUBLIC_BASE_COMMIT}\`"
+            echo "- Checks before push: none; public PR review and CI are the gate."
+          } >> "$GITHUB_STEP_SUMMARY"
