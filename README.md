@@ -2,6 +2,8 @@
 
 ![Claude Desktop Buddy for SiFli hardware](docs/image/claude-desktop.png)
 
+![Work with kimi cli](docs/image/kimi-with-buddy.jpg)
+
 Firmware port of `anthropics/claude-desktop-buddy` for the SiFli SF32LB52
 platform, currently targeting the Huangshan Pi `sf32lb52-lchspi-ulp` HCPU
 project.
@@ -91,6 +93,18 @@ Use the download script in build_*
 cd build_sf32lb52-lchspi-ulp_hcpu
 ./uart_download.sh
 ```
+
+## Work with Claude Desktop
+
+See [claude-desktop-buddy](https://github.com/anthropics/claude-desktop-buddy). Note using the Third-party Infrence may cause the hardware buddy feature be diabled
+
+## Work with a modified Kimi Cli
+
+Use this [Kimi-Cli](https://github.com/kaidegit/kimi-cli), see Development part to run kimi. Note this is only be tested in macOS.
+
+Then use `/ble-buddy scan` to find the device, for example Claude-05CC
+
+use `/ble-buddy pair Claude-05CC` and if it require the pin code, enter the 6 number shown in screen.
 
 ## Test
 
